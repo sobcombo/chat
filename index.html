@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Team Chat</title>
+
+  <style>
+    :root {
+      --black: #0b0b0b;
+      --dark: #161616;
+      --white: #ffffff;
+      --paper: #f5f5f3;
+      --soft: #eeeeec;
+      --muted: #858585;
+      --border: #dededb;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      overflow: hidden;
+      background: #d8d8d5;
+      color: var(--dark);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .chat-app {
+      display: flex;
+      flex-direction: column;
+      width: min(100%, 820px);
+      height: 100dvh;
+      margin: auto;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.16);
+    }
+
+    /* Header */
+    .chat-header {
+      display: flex;
+      flex: 0 0 76px;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 22px;
+      color: var(--white);
+      background: var(--black);
+    }
+
+    .brand-mark {
+      display: grid;
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid #3c3c3c;
+      border-radius: 13px;
+      color: var(--white);
+      font-size: 18px;
+    }
+
+    .brand-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .brand-copy h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .brand-copy p {
+      margin: 5px 0 0;
+      color: #9d9d9d;
+      font-size: 11px;
+      letter-spacing: 0.2px;
+    }
+
+    .sync-status {
+      color: #cfcfcf;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .refresh-button,
+    .send-button,
+    .reply-cancel {
+      border: 0;
+    }
+
+    .refresh-button {
+      padding: 7px;
+      color: var(--white);
+      background: transparent;
+      font-size: 22px;
+    }
+
+    /* Conversation */
+    .messages {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      padding: 24px 20px 20px;
+      overscroll-behavior: contain;
+      scroll-behavior: smooth;
+    }
+
+    .notice,
+    .empty-state {
+      align-self: center;
+      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--muted);
+      box-shadow: var(--shadow);
+    }
+
+    .notice {
+      max-width: 560px;
+      padding: 10px 15px;
+      border-radius: 11px;
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .empty-state {
+      margin: auto;
+      padding: 14px 17px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .day-label {
+      align-self: center;
+      margin: 7px 0;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .message {
+      position: relative;
+      align-self: flex-start;
+      max-width: min(72%, 540px);
+      padding: 13px 15px 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) var(--radius) 5px;
+      background: var(--white);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+      touch-action: pan-y;
+      transition: transform 180ms ease;
+    }
+
+    .message.mine {
+      align-self: flex-end;
+      border-color: var(--dark);
+      border-radius: var(--radius) var(--radius) 5px var(--radius);
+      color: var(--white);
+      background: var(--dark);
+    }
+
+    .message-text {
+      padding-right: 4px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .message-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 7px;
+      color: #999;
+      font-size: 10px;
+    }
+
+    .message.mine .message-meta {
+      color: #aaa;
+    }
+
+    .ticks {
+      color: var(--white);
+      font-weight: 700;
+    }
+
+    .reply-preview {
+      max-height: 42px;
+      margin-bottom: 8px;
+      padding: 7px 9px;
+      overflow: hidden;
+      border-left: 3px solid #888;
+      border-radius: 6px;
+      color: #666;
+      background: #f0f0ee;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .message.mine .reply-preview {
+      color: #ccc;
+      background: #292929;
+    }
+
+    .reply-preview b {
+      display: block;
+      margin-bottom: 2px;
+      color: #222;
+    }
+
+    .message.mine .reply-preview b {
+      color: var(--white);
+    }
+
+    .message-actions {
+      position: absolute;
+      top: -34px;
+      right: 3px;
+      display: none;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+
+    .message:hover .message-actions,
+    .message:focus-within .message-actions {
+      display: block;
+    }
+
+    .message-actions button {
+      padding: 6px 8px;
+      border: 0;
+      color: var(--dark);
+      background: transparent;
+      font-size: 12px;
+    }
+
+    /* Composer */
+    .composer-wrap {
+      flex: 0 0 auto;
+      padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: var(--white);
+    }
+
+    .reply-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin: 0 52px 9px 0;
+      padding: 9px 11px;
+      border-left: 3px solid var(--dark);
+      border-radius: 7px;
+      color: #666;
+      background: var(--soft);
+      font-size: 11px;
+    }
+
+    .reply-bar.show {
+      display: flex;
+    }
+
+    .reply-bar-content {
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .reply-bar b {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--dark);
+    }
+
+    .reply-cancel {
+      padding: 0 3px;
+      color: #555;
+      background: transparent;
+      font-size: 20px;
+    }
+
+    .composer {
+      display: flex;
+      align-items: flex-end;
+      gap: 9px;
+    }
+
+    .message-input {
+      flex: 1;
+      min-height: 45px;
+      max-height: 120px;
+      resize: none;
+      padding: 12px 15px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      outline: none;
+      color: var(--dark);
+      background: var(--paper);
+      font-size: 14px;
+      line-height: 20px;
+    }
+
+    .message-input:focus {
+      border-color: #888;
+    }
+
+    .send-button {
+      width: 45px;
+      height: 45px;
+      border-radius: 14px;
+      color: var(--white);
+      background: var(--black);
+      font-size: 18px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .send-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    @media (max-width: 600px) {
+      .chat-header {
+        padding: 13px 15px;
+      }
+
+      .messages {
+        padding: 20px 10px 16px;
+      }
+
+      .composer-wrap {
+        padding-right: 12px;
+        padding-left: 12px;
+      }
+
+      .message {
+        max-width: 86%;
+      }
+
+      .sync-status {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-app">
+    <header class="chat-header">
+      <div class="brand-mark" aria-hidden="true">✦</div>
+      <div class="brand-copy">
+        <h1>Team Chat</h1>
+        <p>Private anonymous conversation</p>
+      </div>
+      <span id="syncStatus" class="sync-status">● Online</span>
+      <button id="refreshBtn" class="refresh-button" type="button" title="Refresh messages" aria-label="Refresh messages">↻</button>
+    </header>
+
+    <main id="messages" class="messages" aria-live="polite">
+      <div class="notice">Messages are anonymous. They are associated with this device privately for administration.</div>
+      <div id="emptyState" class="empty-state">No messages yet. Start the conversation.</div>
+    </main>
+
+    <section class="composer-wrap">
+      <div id="replyBar" class="reply-bar">
+        <div class="reply-bar-content">
+          <b>Replying to message</b>
+          <span id="replyText"></span>
+        </div>
+        <button id="cancelReply" class="reply-cancel" type="button" aria-label="Cancel reply">×</button>
+      </div>
+
+      <form id="composer" class="composer">
+        <textarea id="messageInput" class="message-input" rows="1" maxlength="2000" placeholder="Write a message…" aria-label="Message"></textarea>
+        <button class="send-button" type="submit" aria-label="Send message">➤</button>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_Vhlq9wHwMBBrY0gmzfLSObRzxR_ATE2jonce0aoO38O5xcjbzkG5I1sFhp61NvTQ/exec";
+    const LOCAL_KEY = "teamChatMessages";
+
+    const elements = {
+      messages: document.getElementById("messages"),
+      emptyState: document.getElementById("emptyState"),
+      input: document.getElementById("messageInput"),
+      composer: document.getElementById("composer"),
+      replyBar: document.getElementById("replyBar"),
+      replyText: document.getElementById("replyText"),
+      cancelReply: document.getElementById("cancelReply"),
+      refresh: document.getElementById("refreshBtn"),
+      status: document.getElementById("syncStatus")
+    };
+
+    let deviceId = localStorage.getItem("deviceId");
+    let messages = readLocalMessages();
+    let replyTo = null;
+
+    if (!deviceId) {
+      deviceId = `DEV-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      localStorage.setItem("deviceId", deviceId);
+    }
+
+    function readLocalMessages() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]");
+        return Array.isArray(stored) ? stored : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLocalMessages() {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(messages));
+    }
+
+    function createMessageId() {
+      return window.crypto?.randomUUID?.() || `MSG-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function formatDate(value) {
+      return new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      }).format(new Date(value));
+    }
+
+    function formatTime(value) {
+      return new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+      }).format(new Date(value));
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[character]);
+    }
+
+    function sortMessages(list) {
+      return [...list].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
+
+    function renderMessages() {
+      elements.messages.querySelectorAll(".day-label, .message").forEach(node => node.remove());
+
+      const sortedMessages = sortMessages(messages);
+      let previousDate = "";
+      elements.emptyState.style.display = sortedMessages.length ? "none" : "block";
+
+      sortedMessages.forEach(message => {
+        const messageDate = formatDate(message.createdAt);
+
+        if (messageDate !== previousDate) {
+          const dayLabel = document.createElement("div");
+          dayLabel.className = "day-label";
+          dayLabel.textContent = messageDate;
+          elements.messages.appendChild(dayLabel);
+          previousDate = messageDate;
+        }
+
+        const parent = message.replyTo
+          ? sortedMessages.find(item => item.id === message.replyTo)
+          : null;
+        const node = document.createElement("article");
+
+        node.className = `message${message.deviceId === deviceId ? " mine" : ""}`;
+        node.dataset.id = message.id;
+        node.innerHTML = `
+          ${parent ? `<div class="reply-preview"><b>Reply</b>${escapeHtml(parent.text)}</div>` : ""}
+          <div class="message-actions">
+            <button type="button" data-reply="${escapeHtml(message.id)}">↩ Reply</button>
+          </div>
+          <div class="message-text">${escapeHtml(message.text)}</div>
+          <div class="message-meta">
+            ${formatTime(message.createdAt)}
+            ${message.deviceId === deviceId ? '<span class="ticks">✓✓</span>' : ""}
+          </div>
+        `;
+
+        node.querySelector("[data-reply]").addEventListener("click", () => selectReply(message));
+        addSwipeReply(node, message);
+        elements.messages.appendChild(node);
+      });
+
+      elements.messages.scrollTop = elements.messages.scrollHeight;
+    }
+
+    function selectReply(message) {
+      replyTo = message;
+      elements.replyText.textContent = message.text;
+      elements.replyBar.classList.add("show");
+      elements.input.focus();
+    }
+
+    function cancelReply() {
+      replyTo = null;
+      elements.replyText.textContent = "";
+      elements.replyBar.classList.remove("show");
+    }
+
+    function addSwipeReply(node, message) {
+      let startX = 0;
+
+      node.addEventListener("touchstart", event => {
+        startX = event.changedTouches[0].clientX;
+      }, { passive: true });
+
+      node.addEventListener("touchend", event => {
+        if (event.changedTouches[0].clientX - startX > 55) {
+          node.style.transform = "translateX(28px)";
+          selectReply(message);
+          setTimeout(() => { node.style.transform = ""; }, 220);
+        }
+      }, { passive: true });
+    }
+
+    function setStatus(text, isOffline = false) {
+      elements.status.textContent = text;
+      elements.status.style.color = isOffline ? "#ffcaca" : "#d8ffd1";
+    }
+
+    function mergeMessages(localMessages, remoteMessages) {
+      const messageMap = new Map();
+      [...localMessages, ...remoteMessages].forEach(message => {
+        if (message?.id) messageMap.set(String(message.id), message);
+      });
+      return [...messageMap.values()];
+    }
+
+    async function syncMessages() {
+      setStatus("● Syncing…");
+
+      try {
+        const response = await fetch(`${APP_SCRIPT_URL}?action=CHAT_LIST`);
+        const result = await response.json();
+        const remoteMessages = Array.isArray(result)
+          ? result
+          : (Array.isArray(result.messages) ? result.messages : []);
+
+        messages = mergeMessages(messages, remoteMessages);
+        saveLocalMessages();
+        renderMessages();
+        setStatus("● Online");
+      } catch {
+        setStatus("● Offline", true);
+      }
+    }
+
+    async function sendMessage(text) {
+      const message = {
+        id: createMessageId(),
+        deviceId,
+        text,
+        replyTo: replyTo?.id || null,
+        createdAt: new Date().toISOString()
+      };
+
+      messages.push(message);
+      saveLocalMessages();
+      renderMessages();
+      cancelReply();
+      setStatus("● Sending…");
+
+      try {
+        const response = await fetch(APP_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ action: "CHAT_SEND", ...message })
+        });
+        const result = await response.json();
+
+        if (result.status && result.status !== "success") {
+          throw new Error(result.message || "Message rejected");
+        }
+
+        setStatus("● Online");
+      } catch {
+        setStatus("● Saved offline", true);
+      }
+    }
+
+    elements.input.addEventListener("input", () => {
+      elements.input.style.height = "auto";
+      elements.input.style.height = `${Math.min(elements.input.scrollHeight, 120)}px`;
+    });
+
+    elements.composer.addEventListener("submit", event => {
+      event.preventDefault();
+      const text = elements.input.value.trim();
+      if (!text) return;
+
+      elements.input.value = "";
+      elements.input.style.height = "auto";
+      sendMessage(text);
+    });
+
+    elements.input.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        elements.composer.requestSubmit();
+      }
+    });
+
+    elements.cancelReply.addEventListener("click", cancelReply);
+    elements.refresh.addEventListener("click", syncMessages);
+    window.addEventListener("online", syncMessages);
+    window.addEventListener("offline", () => setStatus("● Offline", true));
+
+    renderMessages();
+    syncMessages();
+    setInterval(syncMessages, 15000);
+  </script>
+</body>
+</html>
